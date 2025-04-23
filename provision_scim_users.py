@@ -3,7 +3,7 @@ import requests
 import json
 import os
 
-API_URL = "https://api.github.com/scim/v2/enterprises/ENTERPRISE/Users"
+API_URL = "https://api.github.com/scim/v2/enterprises/testcredavenue/Users"
 TOKEN = os.environ.get("GITHUB_TOKEN")  # Read token from environment variable
 
 if not TOKEN:
@@ -16,10 +16,9 @@ def provision_user(row):
         "active": True,
         "userName": row['userName'],
         "name": {
-            "formatted": row['displayName'],
+            "formatted": row['formatted'],
             "familyName": row['familyName'],
-            "givenName": row['givenName'],
-            "middleName": row.get('middleName', "")
+            "givenName": row['givenName']
         },
         "displayName": row['displayName'],
         "emails": [{
@@ -28,7 +27,7 @@ def provision_user(row):
             "primary": True
         }],
         "roles": [{
-            "value": "User",
+            "value": row['role'],
             "primary": False
         }]
     }
