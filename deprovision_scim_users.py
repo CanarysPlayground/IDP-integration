@@ -2,7 +2,7 @@ import csv
 import requests
 import os
 
-ENTERPRISE = "testcredavenue"  # Replace with your enterprise slug if different
+ENTERPRISE = "tech-stack"  # Replace with your enterprise slug if different
 API_URL_TEMPLATE = "https://api.github.com/scim/v2/enterprises/{enterprise}/Users/{scim_user_id}"
 TOKEN = os.environ.get("GITHUB_TOKEN")  # Read token from environment variable
 
