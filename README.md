@@ -1,4 +1,4 @@
-# GitHub EMU Configuration with Google Identity Provider (or Any SCIM-Supported IdP)
+# GitHub EMU Configuration with Google Identity Provider
 
 ---
 
@@ -6,7 +6,7 @@
 
 This document describes how to:
 
-- Integrate **GitHub Enterprise Managed Users (EMU)** with **Google Identity Provider** or any other SCIM-compliant IdP.
+- Integrate **GitHub Enterprise Managed Users (EMU)** with **Google Identity Provider** .
 - Perform **user provisioning** and **deprovisioning** using GitHub's **SCIM REST APIs**.
 - Automate **provisioning** and **deprovisioning** using **GitHub Actions**.
 
@@ -35,9 +35,9 @@ Reference:
 
 ---
 
-### 3.2. Configure Google Identity Provider (or other IdP)
+### 3.2. Configure Google Identity Provider:
 
-> Follow these steps for Google IdP; steps are similar for any IdP:
+> Follow these steps for Google IdP:
 
 1. Open **Google Admin Console**.
 2. Go to **Apps** → **Web and Mobile Apps** → **Add App** → **Add Custom SAML App**.
@@ -211,4 +211,5 @@ jobs:
 - [Configuring SCIM Provisioning for Users](https://docs.github.com/en/enterprise-cloud@latest/admin/managing-iam/provisioning-user-accounts-with-scim/configuring-scim-provisioning-for-users)
 
 ---
-
+## Note: 
+The process outlined will remain the same for other IDPs as well.
