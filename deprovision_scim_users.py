@@ -19,6 +19,8 @@ HEADERS = {
 
 SCIM_BASE_URL = f"https://api.github.com/scim/v2/enterprises/{ENTERPRISE}/Users"
 
+CSV_FILE = "users_to_deprovision.csv"  # Hardcoded CSV file name
+
 def fetch_scim_user_id(email):
     """Fetch the SCIM user ID for a given email address."""
     response = requests.get(SCIM_BASE_URL, headers=HEADERS)
@@ -41,9 +43,13 @@ def deprovision_user(scim_user_id):
     else:
         print(f"Failed to deprovision user with SCIM ID {scim_user_id}: {response.status_code} - {response.text}")
 
-def main(csv_file):
+def main():
     """Main function to process the CSV file and deprovision users."""
-    with open(csv_file, 'r') as file:
+    if not os.path.exists(CSV_FILE):
+        print(f"CSV file '{CSV_FILE}' not found.")
+        sys.exit(1)
+
+    with open(CSV_FILE, 'r') as file:
         reader = csv.DictReader(file)
         for row in reader:
             email = row.get("email")
@@ -59,10 +65,4 @@ def main(csv_file):
                 print(f"SCIM user ID not found for email: {email}")
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python deprovision_users.py <csv_file>")
-        sys.exit(1)
-
-    csv_file = sys.argv[1]
-    main(csv_file)
-    
+    main()
