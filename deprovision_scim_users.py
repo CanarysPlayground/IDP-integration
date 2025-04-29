@@ -22,6 +22,14 @@ def fetch_scim_users():
         raise Exception(f"Failed to fetch SCIM users: {response.status_code} {response.text}")
     return response.json()
 
+def get_scim_user_id_by_email(email):
+    """Fetch SCIM User ID for a specific user email."""
+    scim_users = fetch_scim_users()
+    for user in scim_users.get("Resources", []):
+        if user.get("userName") == email:
+            return user.get("id")
+    return None
+
 def deprovision_user(scim_user_id):
     """Deprovision a specific SCIM user by ID."""
     url = API_URL_TEMPLATE.format(enterprise=ENTERPRISE, scim_user_id=scim_user_id)
@@ -38,31 +46,23 @@ def deprovision_user(scim_user_id):
     return True
 
 def main():
-    # Fetch the SCIM user list
-    try:
-        scim_users = fetch_scim_users()
-        scim_user_map = {user['userName']: user['id'] for user in scim_users.get('Resources', [])}
-        print("Fetched SCIM users successfully.")
-    except Exception as e:
-        print(f"Error fetching SCIM users: {e}")
-        return
-
     # Read the CSV file to find users to deprovision
     try:
         with open('deprovision_users.csv', newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                user_name = row['scim_user_id']
-                scim_user_id = scim_user_map.get(user_name)
+                user_email = row['scim_user_id']
+                print(f"Fetching SCIM User ID for email: {user_email}")
+                scim_user_id = get_scim_user_id_by_email(user_email)
                 if scim_user_id:
-                    print(f"Deprovisioning user: {user_name} (SCIM ID: {scim_user_id})")
+                    print(f"Deprovisioning user: {user_email} (SCIM ID: {scim_user_id})")
                     success = deprovision_user(scim_user_id)
                     if success:
-                        print(f"Successfully deprovisioned user: {user_name}")
+                        print(f"Successfully deprovisioned user: {user_email}")
                     else:
-                        print(f"Failed to deprovision user: {user_name}")
+                        print(f"Failed to deprovision user: {user_email}")
                 else:
-                    print(f"User {user_name} not found in SCIM users.")
+                    print(f"SCIM User ID not found for email: {user_email}")
     except FileNotFoundError:
         print("The file 'deprovision_users.csv' was not found.")
     except Exception as e:
