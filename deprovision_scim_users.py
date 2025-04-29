@@ -34,22 +34,39 @@ def deprovision_user(scim_user_id):
     print(f"Deprovisioning SCIM User ID {scim_user_id}: {response.status_code}")
     if response.status_code != 204:
         print("Error:", response.text)
+        return False
+    return True
 
 def main():
     # Fetch the SCIM user list
-    scim_users = fetch_scim_users()
-    scim_user_map = {user['userName']: user['id'] for user in scim_users.get('Resources', [])}
+    try:
+        scim_users = fetch_scim_users()
+        scim_user_map = {user['userName']: user['id'] for user in scim_users.get('Resources', [])}
+        print("Fetched SCIM users successfully.")
+    except Exception as e:
+        print(f"Error fetching SCIM users: {e}")
+        return
 
     # Read the CSV file to find users to deprovision
-    with open('deprovision_users.csv', newline='') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            user_name = row['scim_user_id']
-            scim_user_id = scim_user_map.get(user_name)
-            if scim_user_id:
-                deprovision_user(scim_user_id)
-            else:
-                print(f"User {user_name} not found in SCIM users.")
+    try:
+        with open('deprovision_users.csv', newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                user_name = row['scim_user_id']
+                scim_user_id = scim_user_map.get(user_name)
+                if scim_user_id:
+                    print(f"Deprovisioning user: {user_name} (SCIM ID: {scim_user_id})")
+                    success = deprovision_user(scim_user_id)
+                    if success:
+                        print(f"Successfully deprovisioned user: {user_name}")
+                    else:
+                        print(f"Failed to deprovision user: {user_name}")
+                else:
+                    print(f"User {user_name} not found in SCIM users.")
+    except FileNotFoundError:
+        print("The file 'deprovision_users.csv' was not found.")
+    except Exception as e:
+        print(f"Error reading the CSV file: {e}")
 
 if __name__ == "__main__":
     main()
