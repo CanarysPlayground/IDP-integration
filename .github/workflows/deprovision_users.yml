@@ -25,4 +25,5 @@ jobs:
       - name: Run Deprovision SCIM Users Script
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN_SCIM }}
+          ENTERPRISE: ${{ secrets.ENTERPRISE }}
         run: python deprovision_scim_users.py
