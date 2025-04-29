@@ -1,72 +1,67 @@
 import csv
 import requests
 import os
+import sys
 
-ENTERPRISE = "tech-stack"  # Replace with your enterprise slug if different
-API_URL_TEMPLATE = "https://api.github.com/scim/v2/enterprises/{enterprise}/Users/{scim_user_id}"
-LIST_USERS_API_URL = f"https://api.github.com/scim/v2/enterprises/{ENTERPRISE}/Users"
-TOKEN = os.environ.get("GITHUB_TOKEN")  # Read token from environment variable
+# Environment variables for sensitive data
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+ENTERPRISE = os.getenv("ENTERPRISE")
 
-if not TOKEN:
-    raise ValueError("Please set the GITHUB_TOKEN environment variable.")
+if not GITHUB_TOKEN or not ENTERPRISE:
+    print("Missing environment variables: GITHUB_TOKEN and ENTERPRISE must be set.")
+    sys.exit(1)
 
-def fetch_scim_users():
-    """Fetch all SCIM users from the enterprise."""
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {TOKEN}",
-        "X-GitHub-Api-Version": "2022-11-28"
-    }
-    response = requests.get(LIST_USERS_API_URL, headers=headers)
+HEADERS = {
+    "Authorization": f"Bearer {GITHUB_TOKEN}",
+    "Accept": "application/vnd.github.v3+json",
+    "Content-Type": "application/json"
+}
+
+SCIM_BASE_URL = f"https://api.github.com/scim/v2/enterprises/{ENTERPRISE}/Users"
+
+def fetch_scim_user_id(email):
+    """Fetch the SCIM user ID for a given email address."""
+    response = requests.get(SCIM_BASE_URL, headers=HEADERS)
     if response.status_code != 200:
-        raise Exception(f"Failed to fetch SCIM users: {response.status_code} {response.text}")
-    return response.json()
+        print(f"Failed to fetch SCIM users: {response.status_code} - {response.text}")
+        return None
 
-def get_scim_user_id_by_email(email):
-    """Fetch SCIM User ID for a specific user email."""
-    scim_users = fetch_scim_users()
-    for user in scim_users.get("Resources", []):
+    users = response.json().get("Resources", [])
+    for user in users:
         if user.get("userName") == email:
             return user.get("id")
     return None
 
 def deprovision_user(scim_user_id):
-    """Deprovision a specific SCIM user by ID."""
-    url = API_URL_TEMPLATE.format(enterprise=ENTERPRISE, scim_user_id=scim_user_id)
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {TOKEN}",
-        "X-GitHub-Api-Version": "2022-11-28"
-    }
-    response = requests.delete(url, headers=headers)
-    print(f"Deprovisioning SCIM User ID {scim_user_id}: {response.status_code}")
-    if response.status_code != 204:
-        print("Error:", response.text)
-        return False
-    return True
+    """Deprovision the user with the specified SCIM user ID."""
+    url = f"{SCIM_BASE_URL}/{scim_user_id}"
+    response = requests.delete(url, headers=HEADERS)
+    if response.status_code == 204:
+        print(f"Successfully deprovisioned user with SCIM ID: {scim_user_id}")
+    else:
+        print(f"Failed to deprovision user with SCIM ID {scim_user_id}: {response.status_code} - {response.text}")
 
-def main():
-    # Read the CSV file to find users to deprovision
-    try:
-        with open('deprovision_users.csv', newline='') as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                user_email = row['scim_user_id']
-                print(f"Fetching SCIM User ID for email: {user_email}")
-                scim_user_id = get_scim_user_id_by_email(user_email)
-                if scim_user_id:
-                    print(f"Deprovisioning user: {user_email} (SCIM ID: {scim_user_id})")
-                    success = deprovision_user(scim_user_id)
-                    if success:
-                        print(f"Successfully deprovisioned user: {user_email}")
-                    else:
-                        print(f"Failed to deprovision user: {user_email}")
-                else:
-                    print(f"SCIM User ID not found for email: {user_email}")
-    except FileNotFoundError:
-        print("The file 'deprovision_users.csv' was not found.")
-    except Exception as e:
-        print(f"Error reading the CSV file: {e}")
+def main(csv_file):
+    """Main function to process the CSV file and deprovision users."""
+    with open(csv_file, 'r') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            email = row.get("email")
+            if not email:
+                print("Missing email in CSV row.")
+                continue
+
+            print(f"Processing email: {email}")
+            scim_user_id = fetch_scim_user_id(email)
+            if scim_user_id:
+                deprovision_user(scim_user_id)
+            else:
+                print(f"SCIM user ID not found for email: {email}")
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) != 2:
+        print("Usage: python deprovision_users.py <csv_file>")
+        sys.exit(1)
+
+    csv_file = sys.argv[1]
+    main(csv_file)
