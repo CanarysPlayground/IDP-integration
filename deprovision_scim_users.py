@@ -22,22 +22,48 @@ SCIM_BASE_URL = f"https://api.github.com/scim/v2/enterprises/{ENTERPRISE}/Users"
 CSV_FILE = "users_to_deprovision.csv"  # Hardcoded CSV file name
 
 def fetch_scim_user_id(email):
-    """Fetch the SCIM user ID for a given email address."""
-    response = requests.get(SCIM_BASE_URL, headers=HEADERS)
-    if response.status_code != 200:
-        print(f"Failed to fetch SCIM users: {response.status_code} - {response.text}")
-        return None
+    """Fetch the SCIM user ID for a given email address, handling pagination."""
+    start_index = 1
+    count = 100  # Number of users to fetch per page
 
-    users = response.json().get("Resources", [])
-    for user in users:
-        if user.get("userName") == email:
-            return user.get("id")
+    while True:
+        params = {"startIndex": start_index, "count": count}
+        response = requests.get(SCIM_BASE_URL, headers=HEADERS, params=params)
+
+        # Debugging: Print SCIM API response details
+        print(f"SCIM API URL: {SCIM_BASE_URL}")
+        print(f"Request Parameters: {params}")
+        print(f"SCIM API Response Status: {response.status_code}")
+        print(f"SCIM API Response Body: {response.text}")
+
+        if response.status_code != 200:
+            print(f"Failed to fetch SCIM users: {response.status_code} - {response.text}")
+            return None
+
+        users = response.json().get("Resources", [])
+        for user in users:
+            if user.get("userName") == email:
+                return user.get("id")
+
+        # Check if there are more pages
+        total_results = response.json().get("totalResults", 0)
+        if start_index + count > total_results:
+            break
+
+        start_index += count
+
     return None
 
 def deprovision_user(scim_user_id):
     """Deprovision the user with the specified SCIM user ID."""
     url = f"{SCIM_BASE_URL}/{scim_user_id}"
     response = requests.delete(url, headers=HEADERS)
+
+    # Debugging: Print details about the deprovisioning request
+    print(f"Deprovision URL: {url}")
+    print(f"Deprovision Response Status: {response.status_code}")
+    print(f"Deprovision Response Body: {response.text}")
+
     if response.status_code == 204:
         print(f"Successfully deprovisioned user with SCIM ID: {scim_user_id}")
     else:
