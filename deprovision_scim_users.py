@@ -21,6 +21,7 @@ SCIM_BASE_URL = f"https://api.github.com/scim/v2/enterprises/{ENTERPRISE}/Users"
 
 CSV_FILE = "users_to_deprovision.csv"  # Hardcoded CSV file name
 
+
 def fetch_scim_user_id(email):
     """Fetch the SCIM user ID for a given email address, handling pagination."""
     start_index = 1
@@ -43,6 +44,7 @@ def fetch_scim_user_id(email):
         users = response.json().get("Resources", [])
         for user in users:
             if user.get("userName") == email:
+                print(f"Found SCIM user ID for email {email}: {user.get('id')}")
                 return user.get("id")
 
         # Check if there are more pages
@@ -52,7 +54,9 @@ def fetch_scim_user_id(email):
 
         start_index += count
 
+    print(f"SCIM user ID not found for email: {email}")
     return None
+
 
 def deprovision_user(scim_user_id):
     """Deprovision the user with the specified SCIM user ID."""
@@ -68,6 +72,7 @@ def deprovision_user(scim_user_id):
         print(f"Successfully deprovisioned user with SCIM ID: {scim_user_id}")
     else:
         print(f"Failed to deprovision user with SCIM ID {scim_user_id}: {response.status_code} - {response.text}")
+
 
 def main():
     """Main function to process the CSV file and deprovision users."""
@@ -89,6 +94,7 @@ def main():
                 deprovision_user(scim_user_id)
             else:
                 print(f"SCIM user ID not found for email: {email}")
+
 
 if __name__ == "__main__":
     main()
