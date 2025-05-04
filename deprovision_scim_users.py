@@ -18,12 +18,38 @@ HEADERS = {
 }
 
 SCIM_BASE_URL = f"https://api.github.com/scim/v2/enterprises/{ENTERPRISE}/Users"
+GITHUB_USERS_API_URL = "https://api.github.com/search/users"
 
 CSV_FILE = "users_to_deprovision.csv"  # Hardcoded CSV file name
 
 
-def fetch_scim_user_id(email):
-    """Fetch the SCIM user ID for a given email address, handling pagination."""
+def fetch_github_username(email):
+    """Fetch the GitHub username associated with the given email address."""
+    params = {"q": f"{email} in:email"}
+    response = requests.get(GITHUB_USERS_API_URL, headers=HEADERS, params=params)
+
+    # Debugging: Print GitHub API response details
+    print(f"GitHub Users API URL: {GITHUB_USERS_API_URL}")
+    print(f"Request Parameters: {params}")
+    print(f"GitHub API Response Status: {response.status_code}")
+    print(f"GitHub API Response Body: {response.text}")
+
+    if response.status_code != 200:
+        print(f"Failed to fetch GitHub username for email {email}: {response.status_code} - {response.text}")
+        return None
+
+    users = response.json().get("items", [])
+    if not users:
+        print(f"No GitHub user found for email: {email}")
+        return None
+
+    username = users[0].get("login")
+    print(f"Found GitHub username for email {email}: {username}")
+    return username
+
+
+def fetch_scim_user_id(username):
+    """Fetch the SCIM user ID for a given GitHub username, handling pagination."""
     start_index = 1
     count = 100  # Number of users to fetch per page
 
@@ -45,8 +71,9 @@ def fetch_scim_user_id(email):
         print(f"Fetched {len(users)} users from SCIM API.")
 
         for user in users:
-            if user.get("userName") == email:
-                print(f"Found SCIM user ID for email {email}: {user.get('id')}")
+            # Match username with SCIM userName field
+            if user.get("userName") == username:
+                print(f"Found SCIM user ID for username {username}: {user.get('id')}")
                 return user.get("id")
 
         # Check if there are more pages
@@ -57,7 +84,7 @@ def fetch_scim_user_id(email):
 
         start_index += count
 
-    print(f"SCIM user ID not found for email: {email}")
+    print(f"SCIM user ID not found for username: {username}")
     return None
 
 
@@ -92,11 +119,15 @@ def main():
                 continue
 
             print(f"Processing email: {email}")
-            scim_user_id = fetch_scim_user_id(email)
+            github_username = fetch_github_username(email)
+            if not github_username:
+                continue
+
+            scim_user_id = fetch_scim_user_id(github_username)
             if scim_user_id:
                 deprovision_user(scim_user_id)
             else:
-                print(f"SCIM user ID not found for email: {email}")
+                print(f"SCIM user ID not found for username: {github_username}")
 
 
 if __name__ == "__main__":
