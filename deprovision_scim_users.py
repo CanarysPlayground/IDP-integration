@@ -42,6 +42,8 @@ def fetch_scim_user_id(email):
             return None
 
         users = response.json().get("Resources", [])
+        print(f"Fetched {len(users)} users from SCIM API.")
+
         for user in users:
             if user.get("userName") == email:
                 print(f"Found SCIM user ID for email {email}: {user.get('id')}")
@@ -49,6 +51,7 @@ def fetch_scim_user_id(email):
 
         # Check if there are more pages
         total_results = response.json().get("totalResults", 0)
+        print(f"Total SCIM results: {total_results}, Current startIndex: {start_index}")
         if start_index + count > total_results:
             break
 
