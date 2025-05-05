@@ -41,7 +41,7 @@ def delete_user(enterprise, scim_user_id):
 def main():
     """Main function to read CSV and delete users."""
     enterprise = os.getenv("ENTERPRISE_SLUG")  # Enterprise slug from environment variables
-    csv_file = os.getenv("CSV_FILE", "users.csv")  # CSV file path
+    csv_file = os.getenv("CSV_FILE", "users_to_deprovision.csv")  # CSV file path
 
     if not TOKEN:
         print("Error: GITHUB_TOKEN environment variable is not set.")
