@@ -5,7 +5,7 @@ on:
   push:
     paths:
       - 'deprovision_scim_users.py'
-      - 'deprovision_users.csv'
+      - 'users_to_deprovision.csv'
 
 jobs:
   deprovision:
