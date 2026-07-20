@@ -2,10 +2,10 @@ name: Deprovision SCIM Users
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - 'deprovision_scim_users.py'
-      - 'users_to_deprovision.csv'
+  #push:
+    #paths:
+      #- 'deprovision_scim_users.py'
+     # - 'users_to_deprovision.csv'
 
 jobs:
   deprovision:
