@@ -3,7 +3,7 @@ import requests
 import json
 import os
 
-API_URL = "https://api.github.com/scim/v2/enterprises/maxval/Users"
+API_URL = "https://api.github.com/scim/v2/enterprises/{enterprise}/Users"
 TOKEN = os.environ.get("GITHUB_TOKEN")  # Read token from environment variable
 
 if not TOKEN:
